@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Babylon.js AR Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+</head>
+<body>
+<canvas id="renderCanvas" touch-action="none" style="width:100%; height:100%;"></canvas>
+
+<script>
+  const canvas = document.getElementById("renderCanvas");
+  const engine = new BABYLON.Engine(canvas, true);
+  
+  const createScene = async () => {
+    const scene = new BABYLON.Scene(engine);
+
+    const xr = await scene.createDefaultXRExperienceAsync({
+      uiOptions: {
+        sessionMode: "immersive-ar",
+        referenceSpaceType: "local-floor"
+      },
+      optionalFeatures: true
+    });
+
+    const featuresManager = xr.baseExperience.featuresManager;
+    const hitTest = featuresManager.enableFeature(
+      BABYLON.WebXRHitTest.Name,
+      "latest",
+      { offsetRay: undefined }
+    );
+
+    const mat = new BABYLON.StandardMaterial("mat", scene);
+    mat.diffuseColor = BABYLON.Color3.Red();
+
+    hitTest.onHitTestResultObservable.add((results) => {
+      if (results.length && !scene.getMeshByName("myCube")) {
+        const hit = results[0];
+        const cube = BABYLON.MeshBuilder.CreateBox("myCube", { size: 0.2 }, scene);
+        cube.material = mat;
+        hit.transformationMatrix.decompose(undefined, undefined, cube.position);
+      }
+    });
+
+    return scene;
+  };
+
+  createScene().then((scene) => {
+    engine.runRenderLoop(() => scene.render());
+  });
+
+  window.addEventListener("resize", () => engine.resize());
+</script>
+</body>
+</html>
